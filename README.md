@@ -49,6 +49,8 @@ Use this as your MCP server command in any stdio-compatible client:
 - Linux/macOS: `<repo>/scripts/mcp-stdio.sh`
 - Fallback: `node <repo>/gateway-mcp/scripts/mcp-stdio.mjs`
 
+Important: replace `<repo>` with your real local path. Do not paste `C:\path\to\...` literally.
+
 Detailed client config mapping: `docs/CLI_SETUP.md`
 Includes explicit setup for Codex CLI, Claude Code, Claude Desktop, and Cursor.
 
@@ -118,6 +120,21 @@ Add to `claude_desktop_config.json`:
     }
   }
 }
+```
+
+### Startup Error Fix (Codex)
+
+If Codex shows:
+
+- `MCP startup failed: ... initialize response`
+
+it is usually a bad script path in the MCP config. Verify and fix with:
+
+```powershell
+codex mcp get fast-mobile-mcp
+codex mcp remove fast-mobile-mcp
+codex mcp add fast-mobile-mcp -- powershell -ExecutionPolicy Bypass -File C:\Users\nagar\fast-mobile-mcp\scripts\mcp-stdio.ps1
+codex mcp list
 ```
 
 ### Cursor

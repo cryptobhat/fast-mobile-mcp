@@ -31,6 +31,7 @@ Pick one launcher:
   - args: `[<repo>/gateway-mcp/scripts/mcp-stdio.mjs]`
 
 Replace `<repo>` with your local path.
+Do not keep `C:\path\to\...` placeholders as-is.
 
 ## Codex CLI
 
@@ -124,4 +125,19 @@ If needed, run runtime smoke from terminal:
 ```powershell
 cd C:\path\to\fast-mobile-mcp\gateway-mcp
 npm run e2e:smoke
+```
+
+## Codex Startup Error: initialize response
+
+If Codex reports:
+
+- `MCP startup failed: ... initialize response`
+
+the MCP command path is often invalid. Fix by re-adding with the real path:
+
+```powershell
+codex mcp get fast-mobile-mcp
+codex mcp remove fast-mobile-mcp
+codex mcp add fast-mobile-mcp -- powershell -ExecutionPolicy Bypass -File C:\Users\nagar\fast-mobile-mcp\scripts\mcp-stdio.ps1
+codex mcp list
 ```
