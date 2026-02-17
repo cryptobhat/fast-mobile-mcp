@@ -63,6 +63,88 @@ Launcher env switches:
 - `FMMCP_START_ANDROID=0` to disable local Android worker
 - `FMMCP_START_IOS=1` to force starting local iOS worker
 
+## Install in Popular MCP Clients
+
+Use this repo's launcher command in your client config:
+
+- `powershell -ExecutionPolicy Bypass -File C:\path\to\fast-mobile-mcp\scripts\mcp-stdio.ps1`
+
+### Codex CLI
+
+```powershell
+codex mcp add fast-mobile-mcp -- powershell -ExecutionPolicy Bypass -File C:\path\to\fast-mobile-mcp\scripts\mcp-stdio.ps1
+codex mcp list
+```
+
+`~/.codex/config.toml` alternative:
+
+```toml
+[mcp_servers.fast-mobile-mcp]
+command = "powershell"
+args = ["-ExecutionPolicy", "Bypass", "-File", "C:\\path\\to\\fast-mobile-mcp\\scripts\\mcp-stdio.ps1"]
+
+[mcp_servers.fast-mobile-mcp.env]
+FMMCP_START_ANDROID = "1"
+FMMCP_START_IOS = "0"
+```
+
+### Claude Code
+
+```powershell
+claude mcp add-json fast-mobile-mcp "{\"type\":\"stdio\",\"command\":\"powershell\",\"args\":[\"-ExecutionPolicy\",\"Bypass\",\"-File\",\"C:\\\\path\\\\to\\\\fast-mobile-mcp\\\\scripts\\\\mcp-stdio.ps1\"],\"env\":{\"FMMCP_START_ANDROID\":\"1\",\"FMMCP_START_IOS\":\"0\"}}"
+claude mcp list
+```
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "fast-mobile-mcp": {
+      "type": "stdio",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\path\\to\\fast-mobile-mcp\\scripts\\mcp-stdio.ps1"
+      ],
+      "env": {
+        "FMMCP_START_ANDROID": "1",
+        "FMMCP_START_IOS": "0"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json` or `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "fast-mobile-mcp": {
+      "type": "stdio",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\path\\to\\fast-mobile-mcp\\scripts\\mcp-stdio.ps1"
+      ],
+      "env": {
+        "FMMCP_START_ANDROID": "1",
+        "FMMCP_START_IOS": "0"
+      }
+    }
+  }
+}
+```
+
 ## MCP Tool Surface
 
 The gateway exposes these tools:
