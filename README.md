@@ -50,6 +50,7 @@ Use this as your MCP server command in any stdio-compatible client:
 - Fallback: `node <repo>/gateway-mcp/scripts/mcp-stdio.mjs`
 
 Detailed client config mapping: `docs/CLI_SETUP.md`
+Includes explicit setup for Codex CLI, Claude Code, Claude Desktop, and Cursor.
 
 What this launcher does:
 
