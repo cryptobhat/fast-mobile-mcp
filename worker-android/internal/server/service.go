@@ -42,6 +42,13 @@ func (s *MobileService) Close() {
 }
 
 func (s *MobileService) ListDevices(ctx context.Context, req *mobilev1.ListDevicesRequest) (*mobilev1.ListDevicesResponse, error) {
+	if req.PlatformFilter == mobilev1.Platform_PLATFORM_IOS {
+		return &mobilev1.ListDevicesResponse{
+			Devices:    []*mobilev1.Device{},
+			CacheAgeMs: 0,
+		}, nil
+	}
+
 	list, err := s.registry.ListDevices(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -49,6 +56,31 @@ func (s *MobileService) ListDevices(ctx context.Context, req *mobilev1.ListDevic
 
 	devices := make([]*mobilev1.Device, 0, len(list))
 	for _, d := range list {
+		deviceStatus := mobilev1.DeviceStatus_DEVICE_STATUS_UNSPECIFIED
+		switch strings.ToLower(d.Status) {
+		case "device":
+			deviceStatus = mobilev1.DeviceStatus_DEVICE_STATUS_READY
+		case "offline":
+			deviceStatus = mobilev1.DeviceStatus_DEVICE_STATUS_OFFLINE
+		default:
+			deviceStatus = mobilev1.DeviceStatus_DEVICE_STATUS_UNHEALTHY
+		}
+
+		// ADB-visible devices are not necessarily automation-ready; verify uiautomator2 health.
+		if deviceStatus == mobilev1.DeviceStatus_DEVICE_STATUS_READY {
+			healthCtx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
+			_, healthErr := s.registry.RuntimeForDevice(healthCtx, d.DeviceID)
+			cancel()
+			if healthErr != nil {
+				s.log.Warn("android automation backend unhealthy", "device_id", d.DeviceID, "err", healthErr)
+				deviceStatus = mobilev1.DeviceStatus_DEVICE_STATUS_UNHEALTHY
+			}
+		}
+
+		if req.ReadyOnly && deviceStatus != mobilev1.DeviceStatus_DEVICE_STATUS_READY {
+			continue
+		}
+
 		devices = append(devices, &mobilev1.Device{
 			DeviceId:       d.DeviceID,
 			Platform:       mobilev1.Platform_PLATFORM_ANDROID,
@@ -56,7 +88,7 @@ func (s *MobileService) ListDevices(ctx context.Context, req *mobilev1.ListDevic
 			Model:          d.Model,
 			OsVersion:      d.OSVersion,
 			IsSimulator:    d.IsSimulator,
-			Status:         mobilev1.DeviceStatus_DEVICE_STATUS_READY,
+			Status:         deviceStatus,
 			LastSeenUnixMs: time.Now().UTC().UnixMilli(),
 			Capabilities:   map[string]string{"automation": "uiautomator2"},
 		})

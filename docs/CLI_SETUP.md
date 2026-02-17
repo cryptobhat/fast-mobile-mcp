@@ -113,6 +113,7 @@ Add to project `.cursor/mcp.json` or global `~/.cursor/mcp.json`:
 
 - `FMMCP_START_ANDROID=0` disables local Android worker startup.
 - `FMMCP_START_IOS=1` forces local iOS worker startup.
+- `FMMCP_BOOTSTRAP=1` allows startup-time gateway bootstrap (`npm install/build`). Keep this off for faster/stable MCP startup.
 
 ## Smoke Validation
 

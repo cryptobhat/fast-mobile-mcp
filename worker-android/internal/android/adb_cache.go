@@ -71,9 +71,6 @@ func parseADBDevices(raw string) []DeviceInfo {
 			continue
 		}
 		status := parts[1]
-		if status != "device" {
-			continue
-		}
 
 		info := DeviceInfo{
 			DeviceID:  parts[0],

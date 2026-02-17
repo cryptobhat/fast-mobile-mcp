@@ -29,6 +29,8 @@ Use this project if you want a mobile MCP server that is fast, deterministic, an
 - Node.js (20+) + npm
 - `adb` in `PATH` for Android runtime
 - `xcrun simctl` + WebDriverAgent for iOS runtime
+- Android `uiautomator2` HTTP server reachable on forwarded device port (default `7912`)
+- iOS WebDriverAgent reachable on configured host/port (default `http://127.0.0.1:8100+`)
 
 ## Quick Start
 
@@ -64,6 +66,7 @@ Launcher env switches:
 
 - `FMMCP_START_ANDROID=0` to disable local Android worker
 - `FMMCP_START_IOS=1` to force starting local iOS worker
+- `FMMCP_BOOTSTRAP=1` to allow startup-time `npm install/build` (disabled by default for faster, stable MCP handshakes)
 
 ## Install in Popular MCP Clients
 
@@ -189,6 +192,11 @@ What it validates:
 - `find_elements` works against that snapshot
 - `screenshot_stream` returns frame metadata
 - invalid device request fails as expected
+
+Note: action-level checks (`get_ui_tree`, tap/type/swipe, screenshots) require platform automation servers to be alive:
+
+- Android: `uiautomator2` endpoint responds to `/version`
+- iOS: WDA endpoint responds to `/status`
 
 Optional E2E env switches:
 

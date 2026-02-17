@@ -43,10 +43,16 @@ export class MobileGrpcRouter {
   }
 
   async listDevices(request: Record<string, unknown>): Promise<any> {
-    const results = await Promise.allSettled([
-      this.invoke(this.android, "ListDevices", request),
-      this.invoke(this.ios, "ListDevices", request)
-    ]);
+    const platformFilter = request.platform_filter;
+    const calls: Array<Promise<any>> = [];
+    if (platformFilter !== "PLATFORM_IOS") {
+      calls.push(this.invoke(this.android, "ListDevices", request, true));
+    }
+    if (platformFilter !== "PLATFORM_ANDROID") {
+      calls.push(this.invoke(this.ios, "ListDevices", request, true));
+    }
+
+    const results = await Promise.allSettled(calls);
 
     const successes = results
       .filter((entry): entry is PromiseFulfilledResult<any> => entry.status === "fulfilled")
@@ -150,7 +156,12 @@ export class MobileGrpcRouter {
     return found.platform === "PLATFORM_IOS" ? this.ios : this.android;
   }
 
-  private async invoke(client: RawClient, method: keyof RawClient, request: Record<string, unknown>): Promise<any> {
+  private async invoke(
+    client: RawClient,
+    method: keyof RawClient,
+    request: Record<string, unknown>,
+    suppressErrorLog = false
+  ): Promise<any> {
     let lastError: unknown;
 
     for (let attempt = 0; attempt <= this.cfg.retries; attempt += 1) {
@@ -178,7 +189,9 @@ export class MobileGrpcRouter {
       }
     }
 
-    logger.error({ err: lastError, method, request }, "grpc invocation failed");
+    if (!suppressErrorLog) {
+      logger.error({ err: lastError, method, request }, "grpc invocation failed");
+    }
     throw lastError;
   }
 

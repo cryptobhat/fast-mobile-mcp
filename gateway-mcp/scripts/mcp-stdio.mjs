@@ -35,8 +35,11 @@ function runtimeEnv() {
   const env = { ...process.env };
   if (isWindows) {
     const userHome = env.USERPROFILE ?? "";
+    const localAppData = env.LOCALAPPDATA ?? "";
     env.PATH = appendToPath(env.PATH, path.join(userHome, "tools", "go1.26.0", "bin"));
     env.PATH = appendToPath(env.PATH, path.join(userHome, "go", "bin"));
+    env.PATH = appendToPath(env.PATH, path.join(localAppData, "Android", "Sdk", "platform-tools"));
+    env.PATH = appendToPath(env.PATH, path.join(localAppData, "Android", "Sdk", "emulator"));
   }
   return env;
 }
@@ -47,6 +50,20 @@ function npmCommand() {
 
 function ensureGatewayReady(env) {
   const nodeModulesDir = path.join(gatewayDir, "node_modules");
+  const distEntry = path.join(gatewayDir, "dist", "index.js");
+  const allowBootstrap = parseBool(process.env.FMMCP_BOOTSTRAP, false);
+
+  if (!allowBootstrap) {
+    if (!existsSync(nodeModulesDir) || !existsSync(distEntry)) {
+      throw new Error(
+        "gateway is not prebuilt (missing node_modules or dist/index.js). " +
+        "Run setup once: cd gateway-mcp && npm install && npm run build. " +
+        "Set FMMCP_BOOTSTRAP=1 only if you explicitly want startup-time bootstrap."
+      );
+    }
+    return distEntry;
+  }
+
   if (!existsSync(nodeModulesDir)) {
     log("gateway dependencies missing, running npm install");
     const install = spawnSync(npmCommand(), ["install"], { cwd: gatewayDir, stdio: "inherit", env });
@@ -55,7 +72,6 @@ function ensureGatewayReady(env) {
     }
   }
 
-  const distEntry = path.join(gatewayDir, "dist", "index.js");
   if (!existsSync(distEntry)) {
     log("gateway dist missing, running npm run build");
     const build = spawnSync(npmCommand(), ["run", "build"], { cwd: gatewayDir, stdio: "inherit", env });
