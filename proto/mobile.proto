@@ -1,0 +1,284 @@
+﻿syntax = "proto3";
+
+package mobile.v1;
+
+option go_package = "github.com/fast-mobile-mcp/proto/gen/go/mobile/v1;mobilev1";
+
+service MobileAutomationService {
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse);
+  rpc GetActiveApp(GetActiveAppRequest) returns (GetActiveAppResponse);
+  rpc GetUITree(GetUITreeRequest) returns (GetUITreeResponse);
+  rpc FindElements(FindElementsRequest) returns (FindElementsResponse);
+  rpc Tap(TapRequest) returns (ActionResponse);
+  rpc Type(TypeRequest) returns (ActionResponse);
+  rpc Swipe(SwipeRequest) returns (ActionResponse);
+  rpc ScreenshotStream(ScreenshotStreamRequest) returns (stream ScreenshotStreamEvent);
+}
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_ANDROID = 1;
+  PLATFORM_IOS = 2;
+}
+
+enum DeviceStatus {
+  DEVICE_STATUS_UNSPECIFIED = 0;
+  DEVICE_STATUS_READY = 1;
+  DEVICE_STATUS_BUSY = 2;
+  DEVICE_STATUS_OFFLINE = 3;
+  DEVICE_STATUS_UNHEALTHY = 4;
+}
+
+enum ActionStatus {
+  ACTION_STATUS_UNSPECIFIED = 0;
+  ACTION_STATUS_OK = 1;
+  ACTION_STATUS_FAILED = 2;
+  ACTION_STATUS_TIMEOUT = 3;
+  ACTION_STATUS_CANCELLED = 4;
+  ACTION_STATUS_INVALID_TARGET = 5;
+}
+
+enum Direction {
+  DIRECTION_UNSPECIFIED = 0;
+  DIRECTION_UP = 1;
+  DIRECTION_DOWN = 2;
+  DIRECTION_LEFT = 3;
+  DIRECTION_RIGHT = 4;
+}
+
+enum SelectorField {
+  SELECTOR_FIELD_UNSPECIFIED = 0;
+  SELECTOR_FIELD_REF_ID = 1;
+  SELECTOR_FIELD_TEXT = 2;
+  SELECTOR_FIELD_CONTENT_DESC = 3;
+  SELECTOR_FIELD_RESOURCE_ID = 4;
+  SELECTOR_FIELD_CLASS_NAME = 5;
+  SELECTOR_FIELD_PACKAGE_NAME = 6;
+  SELECTOR_FIELD_ENABLED = 7;
+  SELECTOR_FIELD_CLICKABLE = 8;
+  SELECTOR_FIELD_VISIBLE = 9;
+}
+
+enum SelectorOperator {
+  SELECTOR_OPERATOR_UNSPECIFIED = 0;
+  SELECTOR_OPERATOR_EQ = 1;
+  SELECTOR_OPERATOR_CONTAINS = 2;
+  SELECTOR_OPERATOR_PREFIX = 3;
+  SELECTOR_OPERATOR_SUFFIX = 4;
+  SELECTOR_OPERATOR_REGEX = 5;
+}
+
+message RequestOptions {
+  string request_id = 1;
+  int32 timeout_ms = 2;
+}
+
+message Coordinates {
+  int32 x = 1;
+  int32 y = 2;
+}
+
+message Bounds {
+  int32 left = 1;
+  int32 top = 2;
+  int32 right = 3;
+  int32 bottom = 4;
+}
+
+message Device {
+  string device_id = 1;
+  Platform platform = 2;
+  string name = 3;
+  string model = 4;
+  string os_version = 5;
+  bool is_simulator = 6;
+  DeviceStatus status = 7;
+  int64 last_seen_unix_ms = 8;
+  map<string, string> capabilities = 9;
+}
+
+message UiNode {
+  string ref_id = 1;
+  string parent_ref_id = 2;
+  int32 index = 3;
+  string text = 4;
+  string content_desc = 5;
+  string resource_id = 6;
+  string class_name = 7;
+  string package_name = 8;
+  Bounds bounds = 9;
+  bool enabled = 10;
+  bool clickable = 11;
+  bool focusable = 12;
+  bool visible = 13;
+  bool selected = 14;
+  bool checked = 15;
+}
+
+message Element {
+  string ref_id = 1;
+  UiNode node = 2;
+}
+
+message SelectorClause {
+  SelectorField field = 1;
+  SelectorOperator operator = 2;
+  string value = 3;
+}
+
+message Selector {
+  repeated SelectorClause clauses = 1;
+  bool match_all = 2;
+  string within_ref_id = 3;
+  uint32 limit = 4;
+}
+
+message ListDevicesRequest {
+  Platform platform_filter = 1;
+  bool ready_only = 2;
+  RequestOptions options = 3;
+}
+
+message ListDevicesResponse {
+  repeated Device devices = 1;
+  int64 cache_age_ms = 2;
+}
+
+message GetActiveAppRequest {
+  string device_id = 1;
+  RequestOptions options = 2;
+}
+
+message GetActiveAppResponse {
+  string device_id = 1;
+  string bundle_id = 2;
+  string app_name = 3;
+  bool is_foreground = 4;
+  int64 observed_at_unix_ms = 5;
+}
+
+message GetUITreeRequest {
+  string device_id = 1;
+  bool force_refresh = 2;
+  uint32 node_limit = 3;
+  uint32 depth_limit = 4;
+  string cursor = 5;
+  RequestOptions options = 6;
+}
+
+message GetUITreeResponse {
+  string device_id = 1;
+  string snapshot_id = 2;
+  int64 expires_at_unix_ms = 3;
+  repeated UiNode nodes = 4;
+  uint32 total_nodes = 5;
+  string next_cursor = 6;
+}
+
+message FindElementsRequest {
+  string device_id = 1;
+  Selector selector = 2;
+  string snapshot_id = 3;
+  uint32 limit = 4;
+  string cursor = 5;
+  bool include_nodes = 6;
+  RequestOptions options = 7;
+}
+
+message FindElementsResponse {
+  string device_id = 1;
+  string snapshot_id = 2;
+  repeated Element elements = 3;
+  string next_cursor = 4;
+  uint32 total_matched = 5;
+}
+
+message TapRequest {
+  string device_id = 1;
+  oneof target {
+    string ref_id = 2;
+    Coordinates coordinates = 3;
+    Selector selector = 4;
+  }
+  string snapshot_id = 5;
+  int32 tap_count = 6;
+  RequestOptions options = 7;
+}
+
+message TypeRequest {
+  string device_id = 1;
+  oneof target {
+    string ref_id = 2;
+    Coordinates coordinates = 3;
+    Selector selector = 4;
+  }
+  string snapshot_id = 5;
+  string text = 6;
+  bool clear_before_type = 7;
+  RequestOptions options = 8;
+}
+
+message SwipeRequest {
+  string device_id = 1;
+  Coordinates start = 2;
+  Coordinates end = 3;
+  Direction direction = 4;
+  int32 distance_px = 5;
+  int32 duration_ms = 6;
+  RequestOptions options = 7;
+}
+
+message ActionResponse {
+  string device_id = 1;
+  string action_id = 2;
+  ActionStatus status = 3;
+  int64 started_at_unix_ms = 4;
+  int64 completed_at_unix_ms = 5;
+  string error_code = 6;
+  string error_message = 7;
+  map<string, string> metadata = 8;
+}
+
+message ScreenshotStreamRequest {
+  string device_id = 1;
+  uint32 max_fps = 2;
+  uint32 jpeg_quality = 3;
+  uint32 max_width = 4;
+  uint32 max_height = 5;
+  uint32 max_frames = 6;
+  RequestOptions options = 7;
+}
+
+message ScreenshotFrameMeta {
+  string frame_id = 1;
+  string device_id = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  string mime_type = 5;
+  uint64 total_bytes = 6;
+  uint32 chunk_count = 7;
+  int64 captured_at_unix_ms = 8;
+}
+
+message ScreenshotChunk {
+  string frame_id = 1;
+  uint32 chunk_index = 2;
+  bytes data = 3;
+}
+
+message StreamHeartbeat {
+  int64 unix_ms = 1;
+}
+
+message StreamEnd {
+  string reason = 1;
+}
+
+message ScreenshotStreamEvent {
+  oneof payload {
+    ScreenshotFrameMeta frame_meta = 1;
+    ScreenshotChunk chunk = 2;
+    StreamHeartbeat heartbeat = 3;
+    StreamEnd end = 4;
+  }
+}

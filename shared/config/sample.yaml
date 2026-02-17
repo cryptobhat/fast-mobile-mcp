@@ -1,0 +1,14 @@
+﻿gateway:
+  grpcTimeoutMs: 1200
+  maxUiNodes: 300
+  maxElements: 100
+  maxStreamFrames: 6
+
+workers:
+  androidAddr: localhost:50051
+  iosAddr: localhost:50052
+
+snapshot:
+  ttlSeconds: 30
+  cleanupIntervalSeconds: 10
+  maxSnapshotsPerDevice: 8

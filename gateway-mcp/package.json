@@ -1,0 +1,27 @@
+﻿{
+  "name": "@fast-mobile-mcp/gateway-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "mcp:stdio": "node scripts/mcp-stdio.mjs",
+    "e2e:smoke": "node scripts/e2e-smoke.mjs"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.8",
+    "@grpc/proto-loader": "^0.7.13",
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "pino": "^9.3.2",
+    "protobufjs": "^7.5.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "ts-proto": "^1.181.2",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}

@@ -1,0 +1,130 @@
+# fast-mobile-mcp
+
+High-performance mobile automation architecture with a thin MCP gateway and dedicated Go workers for Android and iOS.
+
+## Purpose
+
+`fast-mobile-mcp` exists to make mobile automation usable from MCP clients (agents, CLIs, IDE assistants) with production-like behavior:
+
+- one MCP endpoint for both Android and iOS
+- strict per-device action serialization with cross-device parallelism
+- snapshot-based element references (`ref_id`) for stable follow-up actions
+- small response payloads for LLM-friendly tool usage
+- binary screenshot streaming over gRPC between gateway and workers
+
+Use this project if you want a mobile MCP server that is fast, deterministic, and easy to plug into any stdio-compatible MCP client.
+
+## Monorepo Layout
+
+- `gateway-mcp/`: MCP server (Node.js + TypeScript) with validation, per-device queueing, gRPC routing, retries, and response shaping.
+- `worker-android/`: Android worker (Go) with cached discovery, persistent uiautomator2 clients, snapshot store, and serial per-device executors.
+- `worker-ios/`: iOS worker (Go) with simulator discovery, persistent WebDriverAgent clients, snapshot store, and serial per-device executors.
+- `proto/`: shared protobuf contract and generated code output location.
+- `shared/`: shared config and shared Go packages (snapshot model).
+
+## Prerequisites
+
+- Go (1.22+)
+- `protoc` (Protocol Buffers compiler)
+- Node.js (20+) + npm
+- `adb` in `PATH` for Android runtime
+- `xcrun simctl` + WebDriverAgent for iOS runtime
+
+## Quick Start
+
+1. Install gateway dependencies:
+   - `cd gateway-mcp && npm install`
+2. Generate protobuf stubs:
+   - Linux/macOS: `./scripts/gen-proto.sh`
+   - Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\gen-proto.ps1`
+3. Build gateway:
+   - `cd gateway-mcp && npm run build`
+
+## One-Command MCP Server (for CLI clients)
+
+Use this as your MCP server command in any stdio-compatible client:
+
+- Windows PowerShell: `powershell -ExecutionPolicy Bypass -File <repo>\scripts\mcp-stdio.ps1`
+- Windows cmd: `<repo>\scripts\mcp-stdio.cmd`
+- Linux/macOS: `<repo>/scripts/mcp-stdio.sh`
+- Fallback: `node <repo>/gateway-mcp/scripts/mcp-stdio.mjs`
+
+Detailed client config mapping: `docs/CLI_SETUP.md`
+
+What this launcher does:
+
+- starts local Android worker by default
+- starts local iOS worker only on macOS by default
+- starts gateway on stdio so MCP clients can connect directly
+
+Launcher env switches:
+
+- `FMMCP_START_ANDROID=0` to disable local Android worker
+- `FMMCP_START_IOS=1` to force starting local iOS worker
+
+## MCP Tool Surface
+
+The gateway exposes these tools:
+
+- `list_devices`
+- `get_active_app`
+- `get_ui_tree`
+- `find_elements`
+- `tap`
+- `type`
+- `swipe`
+- `screenshot_stream`
+
+## Runtime Smoke E2E
+
+Run a runtime smoke check through MCP (workers + gateway):
+
+- `cd gateway-mcp && npm run e2e:smoke`
+
+What it validates:
+
+- tool registration (`tools/list`)
+- `list_devices` returns at least one ready device
+- `get_ui_tree` returns a snapshot
+- `find_elements` works against that snapshot
+- `screenshot_stream` returns frame metadata
+- invalid device request fails as expected
+
+Optional E2E env switches:
+
+- `FMMCP_E2E_DEVICE_ID=<device-id>` to target a specific device
+- `FMMCP_E2E_PLATFORM=PLATFORM_ANDROID|PLATFORM_IOS` to target platform
+- `FMMCP_E2E_ENABLE_ACTIONS=1` to include a small swipe action check
+
+## Quick Verification for Reviewers
+
+For anyone checking the repo directly, this is the fastest verification path:
+
+1. `cd gateway-mcp && npm install && npm run build`
+2. from repo root: `powershell -ExecutionPolicy Bypass -File .\scripts\gen-proto.ps1` (Windows) or `./scripts/gen-proto.sh` (Linux/macOS)
+3. `cd worker-android && go build ./cmd/worker`
+4. `cd worker-ios && go build ./cmd/worker`
+5. `cd gateway-mcp && npm run e2e:smoke` (requires runtime dependencies and at least one ready device)
+
+## Build Targets
+
+- `make proto`
+- `make build-gateway`
+- `make build-workers`
+- `make mcp-stdio`
+- `make e2e-smoke`
+
+## Runtime Design Guarantees
+
+- parallel automation across devices
+- strict serial execution per device
+- snapshot-based `ref_id` addressing
+- small, shaped payloads to MCP clients
+- gRPC binary screenshot chunk streaming
+
+## Environment
+
+- Gateway env: `gateway-mcp/.env.example`
+- Android env: `worker-android/.env.example`
+- iOS env: `worker-ios/.env.example`
+- Unified sample config: `shared/config/sample.yaml`
